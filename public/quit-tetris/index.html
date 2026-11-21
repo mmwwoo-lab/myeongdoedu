@@ -158,17 +158,16 @@ dialog{overscroll-behavior:contain;max-height:calc(100dvh - 24px)}
 </script><script>(function(root){
   'use strict';
   class BlocksAudio {
-    constructor({createContext,storage,now,onChange,setTimer,clearTimer}={}) {
+    constructor({createContext,now,onChange,setTimer,clearTimer}={}) {
       this.createContext=createContext||(()=>{const Context=root.AudioContext||root.webkitAudioContext;if(!Context)throw new Error('Audio unavailable');return new Context();});
-      this.storage=storage;this.now=now||(()=>performance.now());this.onChange=onChange||(()=>{});
+      this.now=now||(()=>performance.now());this.onChange=onChange||(()=>{});
       this.setTimer=setTimer||((fn,ms)=>setInterval(fn,ms));this.clearTimer=clearTimer||(id=>clearInterval(id));
       this.enabled=true;this.failed=false;this.context=null;this.resuming=null;this.generation=0;this.voices=new Set();
       this.musicVoices=new Set();this.musicTimer=null;this.musicWanted=false;this.level=1;this.tempo=84;this.musicStep=0;this.nextNoteTime=0;
-      try{this.storage ||=root.localStorage;this.enabled=this.storage?.getItem('breathe-blocks-sound')!=='off';}catch{}
+      // Every newly opened game starts with sound ON. Muting lasts for this session.
     }
     setEnabled(enabled) {
       const wanted=this.musicWanted;this.enabled=enabled;this.failed=false;this.stop();this.musicWanted=wanted;
-      try{this.storage?.setItem('breathe-blocks-sound',enabled?'on':'off');}catch{}
       this.onChange();
       if(enabled&&wanted)void this.startMusic(this.level);
     }
@@ -252,7 +251,8 @@ dialog{overscroll-behavior:contain;max-height:calc(100dvh - 24px)}
   }
   if(typeof module!=='undefined')module.exports=BlocksAudio;
   root.BlocksAudio=BlocksAudio;
-})(typeof window!=='undefined'?window:globalThis);</script><script>(function(root){
+})(typeof window!=='undefined'?window:globalThis);
+</script><script>(function(root){
   'use strict';
   function bindGameControls(buttons,{onAction,isActive,setDelay=setTimeout,clearDelay=clearTimeout,setRepeat=setInterval,clearRepeat=clearInterval}){
     const presses=new Map();
