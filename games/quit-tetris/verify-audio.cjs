@@ -1,0 +1,34 @@
+const assert=require('node:assert/strict');
+const BlocksAudio=require('./dist/audio.js');
+const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return{promise,resolve,reject};};
+function fixture(state='running',saved=null){
+  const nodes=[],writes=[],timers=new Set();let time=0,resumeCalls=0;
+  const pending=deferred();
+  const context={state,currentTime:10,destination:{},resume(){resumeCalls++;return pending.promise;},
+    createOscillator(){const node={type:null,frequency:{setValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},disconnect(){this.disconnected=true;},start(t){assert.equal(context.state,'running');this.started=t;},stop(t){this.stopped=t??true;}};nodes.push(node);return node;},
+    createGain(){return{gain:{setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},disconnect(){}};}};
+  const sound=new BlocksAudio({createContext:()=>context,storage:{getItem:()=>saved,setItem:(...v)=>writes.push(v)},now:()=>time,setTimer:fn=>{timers.add(fn);return fn;},clearTimer:fn=>timers.delete(fn)});
+  return{sound,context,nodes,writes,pending,timers,setTime:t=>time=t,resumeCalls:()=>resumeCalls};
+}
+let count=0;async function test(name,fn){await fn();console.log('PASS '+name);count++;}
+(async()=>{
+  await test('first effect waits for the suspended context',async()=>{const f=fixture('suspended'),p=f.sound.play();assert.equal(f.nodes.length,0);assert.equal(f.resumeCalls(),1);f.context.state='running';f.pending.resolve();assert.equal(await p,true);assert.equal(f.nodes.length,1);});
+  await test('mute cancels pending first effect',async()=>{const f=fixture('suspended'),p=f.sound.play();f.sound.setEnabled(false);f.context.state='running';f.pending.resolve();assert.equal(await p,false);assert.equal(f.nodes.length,0);});
+  await test('resume failure is handled and retry can recover',async()=>{const f=fixture('suspended'),p=f.sound.play();f.pending.reject(new Error('blocked'));assert.equal(await p,false);assert.equal(f.sound.failed,true);f.context.state='running';assert.equal(await f.sound.play(),true);assert.equal(f.sound.failed,false);});
+  await test('muting immediately stops active effects',async()=>{const f=fixture();await f.sound.play();f.sound.setEnabled(false);assert.equal(f.sound.voices.size,0);assert.equal(f.nodes[0].stopped,true);assert.equal(f.nodes[0].disconnected,true);assert.equal(await f.sound.play(),false);});
+  await test('repeated effects share one context resume',async()=>{const f=fixture('interrupted'),a=f.sound.play(),b=f.sound.play();assert.equal(f.resumeCalls(),1);f.context.state='running';f.pending.resolve();assert.deepEqual(await Promise.all([a,b]),[true,true]);});
+  await test('slow resume discards stale effects',async()=>{const f=fixture('suspended'),p=f.sound.play();f.setTime(500);f.context.state='running';f.pending.resolve();assert.equal(await p,false);assert.equal(f.nodes.length,0);});
+  await test('saved sound setting survives reload',async()=>{const f=fixture('running','off');assert.equal(f.sound.enabled,false);assert.equal(await f.sound.play(),false);f.sound.setEnabled(true);assert.deepEqual(f.writes[0],['breathe-blocks-sound','on']);});
+  await test('pause cancels queued and active effects',async()=>{const f=fixture();await f.sound.play();f.sound.stop();assert.equal(f.sound.voices.size,0);assert.equal(f.nodes[0].disconnected,true);});
+  await test('rapid effects have bounded overlap and clean up',async()=>{const f=fixture();for(let i=0;i<12;i++)await f.sound.play();assert.equal(f.sound.voices.size,4);for(const node of f.nodes)node.onended();assert.equal(f.sound.voices.size,0);});
+  await test('unavailable audio is recoverable without breaking gameplay',async()=>{const sound=new BlocksAudio({createContext:()=>{throw new Error('unavailable');}});assert.equal(await sound.play(),false);assert.equal(sound.failed,true);});
+  await test('every grade increases rhythm from 84 through 174 BPM',async()=>{const f=fixture();for(let n=1;n<=10;n++){f.sound.setLevel(n);assert.equal(f.sound.tempo,84+(n-1)*10);}assert.equal(f.sound.tempo,174);});
+  await test('background rhythm keeps scheduling beyond the first notes',async()=>{const f=fixture();assert.equal(await f.sound.startMusic(1),true);assert.equal(f.timers.size,1);const before=f.nodes.length;for(let i=0;i<16;i++){f.context.currentTime+=.025;for(const tick of f.timers)tick();}assert.ok(f.nodes.length>before);assert.ok(f.sound.musicStep>1);});
+  await test('changing grade accelerates the existing loop without duplication',async()=>{const f=fixture();await f.sound.startMusic(1);const timer=f.sound.musicTimer;f.sound.setLevel(10);const next=f.sound.nextNoteTime;f.context.currentTime=next;for(const tick of f.timers)tick();assert.equal(f.sound.musicTimer,timer);assert.equal(f.timers.size,1);const scheduled=f.sound.nextNoteTime-next;assert.ok(Math.abs(scheduled-2*(60/174/4))<.000001);});
+  await test('repeated start requests produce only one music loop',async()=>{const f=fixture();await Promise.all([f.sound.startMusic(4),f.sound.startMusic(4),f.sound.startMusic(4)]);assert.equal(f.timers.size,1);assert.equal(f.sound.musicStep,1);});
+  await test('mute stops music immediately and enabling resumes it',async()=>{const f=fixture();await f.sound.startMusic(6);assert.ok(f.sound.musicVoices.size>0);f.sound.setEnabled(false);assert.equal(f.timers.size,0);assert.equal(f.sound.musicVoices.size,0);assert.equal(f.sound.musicWanted,true);f.sound.setEnabled(true);await Promise.resolve();assert.equal(f.timers.size,1);assert.equal(f.sound.tempo,134);f.sound.stop();});
+  await test('pause or game end prevents music from restarting until requested',async()=>{const f=fixture();await f.sound.startMusic(3);f.sound.stop();assert.equal(f.timers.size,0);assert.equal(f.sound.musicVoices.size,0);assert.equal(f.sound.musicWanted,false);f.sound.setEnabled(false);f.sound.setEnabled(true);await Promise.resolve();assert.equal(f.timers.size,0);});
+  await test('pausing during context resume cancels pending background music',async()=>{const f=fixture('suspended'),p=f.sound.startMusic(1);f.sound.stop();f.context.state='running';f.pending.resolve();assert.equal(await p,false);assert.equal(f.timers.size,0);assert.equal(f.nodes.length,0);});
+  await test('effect overlap limit does not cut off background rhythm',async()=>{const f=fixture();await f.sound.startMusic(1);const music=f.sound.musicVoices.size;for(let i=0;i<12;i++)await f.sound.play();assert.equal(f.sound.voices.size,4);assert.equal(f.sound.musicVoices.size,music);f.sound.stop();assert.equal(f.sound.musicVoices.size,0);});
+  console.log(count+' audio checks passed');
+})().catch(e=>{console.error(e);process.exitCode=1;});
