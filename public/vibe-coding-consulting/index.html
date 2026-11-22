@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#f5d9ed"><meta name="description" content="명도재 이명우의 바이브코딩 상담소. 음성 또는 문자로 짧고 쉽게 상담합니다."><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="stylesheet" href="styles.css"><title>명도재 이명우의 바이브코딩 상담소</title>
+</head>
+<body><main class="app"><div class="toy toy-one" aria-hidden="true">✿</div><div class="toy toy-two" aria-hidden="true">✦</div><header><div class="badge">明道齋 · VIBE CODING</div><h1>명도재 이명우의<br><span>바이브코딩 상담소</span></h1></header>
+<section class="console" aria-label="바이브코딩 상담 화면">
+ <div class="welcome" id="welcome"><div class="mascot" aria-hidden="true"><span>✦</span><b>明</b></div><p>아이디어 한마디면,<br>첫 앱 만드는 길이 보여요.</p><button id="start" class="big-button" type="button">상담 시작하기</button></div>
+ <div id="session" class="session" hidden>
+  <div class="controls"><span class="tiny-label">상담 방법</span><div class="mode-tabs" role="group" aria-label="상담 입력 방식"><button id="text-mode" type="button" class="mode active" aria-pressed="true">⌨ 글로 상담</button><button id="voice-mode" type="button" class="mode" aria-pressed="false">🎙 말로 상담</button></div></div>
+  <div class="categories"><span class="tiny-label">질문 분류</span><div id="category-list" class="category-list"></div><p class="classified">입력 내용: <strong id="category-current">아직 질문이 없어요</strong></p></div>
+  <div id="messages" class="messages" role="log" aria-live="polite" aria-relevant="additions"></div>
+  <form id="message-form" class="input-row"><label class="sr-only" for="question">상담 질문</label><input id="question" maxlength="320" placeholder="예: 어린이 과학 퀴즈를 만들고 싶어요" autocomplete="off"><button id="send" type="submit">보내기</button></form>
+  <div id="voice-row" class="voice-row" hidden><button id="mic" type="button" class="mic">🎙 말하기 시작</button><p id="voice-status" role="status">버튼을 누르고 말씀해 주세요.</p></div>
+  <div class="bottom"><button id="finish" type="button" class="finish">상담 마치기 · 제작 방법 보기</button></div>
+  <div id="result" class="result" hidden><h2>우리의 첫 작품 만들기 ✦</h2><p id="result-intro"></p><ol id="result-steps"></ol><div class="spec-box"><b>추천 제작 사양</b><ul id="result-specs"></ul></div><div class="prompt-box"><b>AI에게 이렇게 말해 보세요</b><p id="result-prompt"></p></div><div class="copy-guide"><b>복사한 결과 활용하기</b><p>① 상담 결과 복사 → ② ChatGPT 새 창 열기 → ③ ChatGPT에서 새 채팅을 누른 다음 입력칸에 붙여넣고 보내기. 추천 사양과 제작 방법이 함께 전달됩니다.</p></div><div class="result-actions"><button id="copy" type="button" class="save">상담 결과 복사</button><button id="open-chatgpt" type="button" class="chatgpt-link">ChatGPT 새 창 열기</button><button id="again" type="button" class="again">새 상담</button></div><p id="copy-status" class="copy-status" role="status" aria-live="polite"></p><details id="open-fallback" class="open-fallback"><summary>새 창이 열리지 않나요?</summary><p>상담 결과를 먼저 복사한 뒤, 아래 방법으로 ChatGPT를 여세요.</p><div class="fallback-actions"><a href="https://chatgpt.com/" target="_top" rel="noopener">현재 창에서 열기</a><button id="copy-chatgpt-url" type="button">ChatGPT 주소 복사</button></div><label for="chatgpt-url">직접 열 주소</label><input id="chatgpt-url" value="https://chatgpt.com/" readonly></details><textarea id="copy-source" class="copy-source" readonly hidden aria-label="상담 결과 직접 복사"></textarea></div>
+ </div>
+</section></main><script src="app.js" defer></script></body></html>
