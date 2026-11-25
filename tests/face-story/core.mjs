@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { shapes, features, classifyRatios, measureFace, faceSVG, escapeHTML, resultText } from '../../public/face-story/face-core.mjs';
+import { shapes, features, classifyRatios, measureFace, faceSVG, escapeHTML, resultText, buildAppraisal, countChars } from '../../public/face-story/face-core.mjs';
 const tests=[];
 const test=(name,fn)=>{try{fn();tests.push({name,status:'PASS'});}catch(error){tests.push({name,status:'FAIL',error:error.message});}};
 test('얼굴형 5종 분류',()=>{for(const [ratio,jawRatio,expected] of [[1.6,.75,'long'],[1.3,.6,'heart'],[1.3,.9,'square'],[1.1,.75,'round'],[1.3,.75,'oval']])assert.equal(classifyRatios({ratio,jawRatio}),expected);});
@@ -11,6 +11,10 @@ test('해상도 비율 유지 시 동일 측정',()=>{const a=measureFace(points
 test('5종×8개 특징 조합 SVG 생성',()=>{const svgs=new Set();for(const shape of Object.keys(shapes))for(const brow of Object.keys(features.brow.items))for(const eye of Object.keys(features.eye.items))for(const lip of Object.keys(features.lip.items)){const svg=faceSVG({shape,brow,eye,lip});assert.match(svg,/^<svg.*<\/svg>$/s);assert.match(svg,/role="img" aria-label=/);assert.doesNotMatch(svg,/undefined|NaN|<script/);svgs.add(svg);}assert.equal(svgs.size,40);});
 test('사용자 문자열 HTML 이스케이프',()=>assert.equal(escapeHTML('<img src="x" onerror=\'bad\'>&'),'&lt;img src=&quot;x&quot; onerror=&#39;bad&#39;&gt;&amp;'));
 test('결과 다운로드가 실제 줄바꿈을 포함',()=>{const text=resultText({nickname:'테스트',age:27,gender:'비공개'},{shape:'oval',brow:'arch',eye:'soft',lip:'full'},'수동');assert.ok(text.includes('\n'),'실제 개행 문자가 없습니다');assert.ok(!text.includes('\\n'),'문자열 \\n 이 그대로 출력됩니다');assert.ok(!text.includes('27'));assert.ok(!text.includes('비공개'));assert.match(text,/별명은 포함/);});
+test('40조합 종합500자·세부각200자 및 닉네임20자',()=>{let combinations=0;const nickname='가나다라마바사아자차카타파하가나다라마바';assert.equal(countChars(nickname),20);for(const shape of Object.keys(shapes))for(const brow of Object.keys(features.brow.items))for(const eye of Object.keys(features.eye.items))for(const lip of Object.keys(features.lip.items)){const a=buildAppraisal({nickname,age:120,gender:'직접 표현 / 그 외'},{shape,brow,eye,lip});assert.ok(countChars(a.overall)>0&&countChars(a.overall)<=500);assert.ok(a.overall.includes(nickname));assert.ok(a.overall.includes(shapes[shape].name));assert.match(a.overall,/판단하지 않/);assert.equal(a.details.length,4);assert.deepEqual(a.details.map(d=>d.key),['shape','brow','eye','lip']);for(const d of a.details)assert.ok(countChars(d.text)>0&&countChars(d.text)<=200);combinations++;}assert.equal(combinations,40);});
+test('Unicode 문자수 및 긴 닉네임 20자 제한',()=>{assert.equal(countChars('가😀나'),3);const nickname='😀'.repeat(25);const a=buildAppraisal({nickname},{shape:'oval',brow:'arch',eye:'soft',lip:'full'});assert.ok(a.overall.startsWith('😀'.repeat(20)+'님의'));assert.ok(!a.overall.includes('😀'.repeat(21)));});
+test('나이·성별이 감정문을 변경하지 않음',()=>{const s={shape:'oval',brow:'arch',eye:'soft',lip:'full'};assert.deepEqual(buildAppraisal({nickname:'테스트',age:1,gender:'남성'},s),buildAppraisal({nickname:'테스트',age:120,gender:'여성'},s));const text=resultText({nickname:'테스트',age:120,gender:'비공개'},s,'예시');assert.match(text,/명도재 이명우의 관상앱/);assert.match(text,/종합감정/);assert.match(text,/세부해설/);assert.ok(!text.includes('120'));assert.ok(!text.includes('비공개'));});
 console.log(JSON.stringify({passed:tests.filter(t=>t.status==='PASS').length,failed:tests.filter(t=>t.status==='FAIL').length,tests},null,2));
 if(tests.some(t=>t.status==='FAIL'))process.exitCode=1;
+
 

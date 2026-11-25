@@ -1,4 +1,4 @@
-# 결 · 얼굴에 담긴 문화 이야기
+# 명도재 이명우의 관상앱
 
 사진·카메라 입력과 브라우저 내 얼굴 형태 분석을 제공하는 한국어 문화 체험 앱입니다. 얼굴형 5종, 눈썹·눈·입술 각 2종, SVG 그림과 창작 도상 설명을 제공합니다. 성격·능력·건강·운명을 추론하지 않습니다.
 
@@ -13,3 +13,4 @@
 문화 배경: https://encykorea.aks.ac.kr/Article/E0004873
 기술: https://developers.google.com/edge/mediapipe/solutions/vision/face_landmarker
 MediaPipe 0.10.22-rc.20250304, Face Landmarker float16 v1. Apache 2.0 라이선스는 vendor/LICENSE에 포함합니다. 모든 도상 감상문은 앱의 창작입니다.
+최종판: 회색 카메라 디자인, 닉네임 필수·나이/성별 선택 표시, 단락별 종합감정500자·부분별200자, PNG 감정서 로컬 생성. 추가 테스트: node tests/face-story/appraisal.mjs

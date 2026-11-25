@@ -1,7 +1,7 @@
 # myeongdoedu
 명도재 초등,중등 학습게임
 
-## 결 · 관상 문화 이야기
+## 명도재 이명우의 관상앱
 
 `public/face-story/`에 사진·카메라 입력, 기기 내 얼굴 형태 측정, SVG 그림과 문화 설명 웹앱을 추가했습니다. Vercel의 기존 `outputDirectory: public` 설정에서 `/face-story/`로 제공합니다. 실제 공개 주소는 배포 결과를 확인하세요.
 
