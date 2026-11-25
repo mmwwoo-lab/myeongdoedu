@@ -1,16 +1,30 @@
 # 명도재 이명우의 관상앱
 
-사진·카메라 입력과 브라우저 내 얼굴 형태 분석을 제공하는 한국어 문화 체험 앱입니다. 얼굴형 5종, 눈썹·눈·입술 각 2종, SVG 그림과 창작 도상 설명을 제공합니다. 성격·능력·건강·운명을 추론하지 않습니다.
+사진·카메라로 입력한 실제 사진에 얼굴 윤곽·눈썹·눈·입술을 붉은 선으로 표시하고 부분별 설명을 제공합니다. 별도 얼굴 도식은 화면에서 사용하지 않습니다. 관광지 사진 자판기 색상과 입체 버튼을 적용했습니다.
 
-이 디렉터리의 정적 파일을 HTTP(S)로 서비스하면 실행됩니다. 저장소의 기존 Vercel 설정은 public/을 배포하므로 앱 경로는 /face-story/입니다. 카메라는 HTTPS 또는 localhost와 사용자 권한이 필요합니다. file:// 실행은 지원하지 않습니다. npm 설치나 API 키는 필요하지 않습니다.
+## 실행
 
-사진과 폼 값은 페이지 메모리에서만 처리합니다. 업로드 API·영구 저장소·추적 도구를 사용하지 않습니다. 모델은 같은 사이트의 vendor/에서 로드합니다. 별명·나이·성별은 모두 선택이며 나이·성별은 분류에 사용하지 않습니다. 전체 삭제 후 직접 저장한 결과 파일과 호스팅 접속 로그는 별개입니다.
+독립 소스 묶음에서는 node server.mjs 실행. 이 저장소에서는 public/을 HTTP 서버로 서비스합니다.
 
-분류는 MediaPipe 특징점 비율의 실험적 휴리스틱이며 객관적 관상 판정이 아닙니다. 촬영 각도에 영향을 받으며, 실패하면 직접 선택임을 표시합니다. 그림의 코는 공통 기호입니다. 피부색·연령 집단별 정확도는 평가하지 않았습니다.
+저장소 배포 경로는 /face-story/입니다. 카메라는 HTTPS 또는 localhost 및 사용자 권한이 필요합니다. file:// 직접 실행은 지원하지 않습니다. Node 22 이상 권장. npm 설치나 API 키는 필요하지 않습니다.
 
-업무지시·유형자료·개인정보·품질·개발완료 보고서는 저장소의 docs/face-story/에 있습니다. 테스트: 저장소 루트에서 node tests/face-story/core.mjs 및 node --experimental-vm-modules tests/face-story/integration.mjs (Node 22 이상).
+## 관찰·운세
 
-문화 배경: https://encykorea.aks.ac.kr/Article/E0004873
+닉네임은 필수, 나이·성별은 선택입니다. 전체 관찰500자·부분별각200자 이내. 운세는 직접 선택한 관심 주제에 따른 창작이며 전체·분야별·12개월 상징 이야기와 토정비결풍 해설을 제공합니다. 나이는 화면의 생활 제안, 성별은 프로필 표시만 사용합니다. 얼굴·나이·성별에서 실제 미래를 예측하지 않습니다. 정통 토정비결 괘를 계산하지 않습니다.
+
+## 개인정보·저장
+
+기기 내 처리만 사용하며 사진·입력값을 서버로 업로드하지 않습니다. 감정서 PNG에는 사진·닉네임, 표시 사진 PNG에는 사진, TXT에는 닉네임·설명·운세가 포함됩니다. 나이·성별·연령별 제안은 파일에서 제외합니다. 파일 공유 전 내용을 확인하세요. 전체 삭제와 카메라 종료를 제공합니다. 이미 저장한 파일·호스팅 일반 접속 로그는 별개입니다.
+
+## 주요 파일
+
+dist/app.mjs: 입력·처리·삭제·저장
+dist/photo-annotations.mjs: 실제 사진 붉은 선 표시
+dist/fortune.mjs: 창작 운세와 연령별 생활 제안
+dist/face-core.mjs: 형태 분류와 설명
+dist/report-canvas.mjs: 사진과 전체 해설 PNG
+dist/styles.css, camera-theme.css, tourist-theme.css: 반응형 자판기 디자인
+dist/vendor/: MediaPipe 로컬 모델·WASM·Apache 2.0 LICENSE
+
+문화 배경: https://encykorea.aks.ac.kr/Article/E0059207
 기술: https://developers.google.com/edge/mediapipe/solutions/vision/face_landmarker
-MediaPipe 0.10.22-rc.20250304, Face Landmarker float16 v1. Apache 2.0 라이선스는 vendor/LICENSE에 포함합니다. 모든 도상 감상문은 앱의 창작입니다.
-최종판: 회색 카메라 디자인, 닉네임 필수·나이/성별 선택 표시, 단락별 종합감정500자·부분별200자, PNG 감정서 로컬 생성. 추가 테스트: node tests/face-story/appraisal.mjs

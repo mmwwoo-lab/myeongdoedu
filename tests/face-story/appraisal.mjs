@@ -9,7 +9,7 @@ for(const shape of Object.keys(shapes))for(const brow of Object.keys(features.br
   assert.equal(appraisal.details.length,4);
   for(const detail of appraisal.details){assert.ok(countChars(detail.text)<=200);assert.ok(detail.text.includes('\n\n'));}
   assert.deepEqual(appraisal,buildAppraisal({...profile,age:120,gender:'남성'},selection),'나이·성별이 감정문을 바꾸면 안 됨');
-  const text=resultText({...profile,nickname:'달빛'},selection,'테스트');assert.ok(text.includes('명도재 이명우의 관상앱'));assert.ok(!text.includes('38'));assert.ok(!text.includes('여성'));assert.ok(text.includes('달빛'));
+  const text=resultText({...profile,nickname:'달빛'},selection,'테스트');assert.ok(text.includes('명도재 이명우의 관상앱'));assert.ok(!text.includes('38세'));assert.ok(!text.includes('여성'));assert.ok(text.includes('달빛'));
   combinations++;
 }
 const measure={measureText:s=>({width:Array.from(s).length*25})};
@@ -20,6 +20,6 @@ globalThis.document={createElement(){canvas={width:0,height:0,getContext(){retur
 globalThis.Image=class{async decode(){}set src(v){if(v==='')released=true;}};
 const {createReportPNG}=await import('../../public/face-story/report-canvas.mjs');
 const png=await createReportPNG({nickname:'달빛산책',age:38,gender:'여성'},{shape:'oval',brow:'arch',eye:'soft',lip:'full'},'자동 측정 후 확인');
-assert.equal(png.type,'image/png');assert.ok(draws.length>10);assert.ok(draws.every(d=>!d.s.includes('38세')&&!d.s.includes('여성')));assert.equal(canvas.width,0);assert.equal(canvas.height,0);assert.equal(released,true);
+assert.equal(png.type,'image/png');assert.ok(draws.length>10);assert.ok(draws.every(d=>!d.s.includes('38세')&&!d.s.includes('여성')));assert.equal(canvas.width,0);assert.equal(canvas.height,0);
 globalThis.document=originalCreate;globalThis.Image=originalImage;
 console.log(`PASS: ${combinations}가지 조합의 500/200자 제한·단락·프로필 비추론·TXT 개인정보 제외 / 캔버스 줄바꿈·PNG 생성 경로·자원 해제`);

@@ -1,3 +1,6 @@
+import {buildFortune,fortuneText} from './fortune.mjs';
+export {buildFortune,fortuneText,fortuneThemes} from './fortune.mjs';
+export {drawAnnotatedPhoto} from './photo-annotations.mjs';
 export const shapes = {
   oval: {name:'타원형', motif:'유려한 선의 균형', visual:'세로가 가로보다 조금 길고, 턱으로 이어지는 윤곽이 부드러운 형태입니다.', story:'타원 도상은 긴 곡선이 끊김 없이 이어지는 모습으로 감상할 수 있습니다. 이 앱에서는 이를 ‘균형’이라는 창작 주제로 표현했습니다.'},
   round: {name:'둥근형', motif:'원을 닮은 부드러움', visual:'가로와 세로의 차이가 작고, 볼과 턱의 곡선이 둥글게 이어지는 형태입니다.', story:'둥근 도상은 원의 순환과 곡선의 연결을 떠올리게 합니다. 이 앱에서는 이를 ‘이어짐’이라는 창작 주제로 표현했습니다.'},
@@ -41,14 +44,11 @@ const bounded=(text,max)=>Array.from(text).slice(0,max).join('');
 export function buildAppraisal(profile,selection){
   const s=shapes[selection.shape]||shapes.oval;
   const nickname=bounded(String(profile.nickname||'체험자').trim(),20)||'체험자';
-  const brow={straight:'직선에 가까운 눈썹은 가로 방향의 선을 또렷하게 보여 줍니다. 그림에서는 짧은 직선으로 표현했습니다. 평행한 선이 만드는 화면의 리듬을 감상해 보세요.',arch:'곡선이 보이는 눈썹은 가운데가 완만하게 솟아오르는 윤곽입니다. 그림에서는 활 모양의 선으로 표현했습니다. 이마 아래로 이어지는 곡선의 흐름을 감상해 보세요.'};
-  const eye={soft:'가로로 이어지는 눈 윤곽은 좌우 길이가 세로 폭보다 두드러져 보이는 형태입니다. 그림에서는 길고 얕은 곡선으로 표현했습니다. 표정과 촬영 각도에 따라 달라질 수 있습니다.',open:'세로 폭이 드러나는 눈 윤곽은 눈 위아래의 간격이 상대적으로 보이는 형태입니다. 그림에서는 열린 곡선으로 표현했습니다. 표정과 촬영 각도에 따라 달라질 수 있습니다.'};
-  const lip={fine:'얇게 보이는 입술 선은 입술의 세로 폭이 상대적으로 작아 보이는 형태입니다. 그림에서는 가는 선으로 단순화했습니다. 말하거나 웃는 순간에는 윤곽이 달라질 수 있습니다.',full:'도톰하게 보이는 입술 선은 입술의 세로 폭이 상대적으로 드러나는 형태입니다. 그림에서는 위아래 곡선의 간격을 넓혀 표현했습니다. 표정과 빛에 따라 윤곽은 달라질 수 있습니다.'};
-  const overall=bounded(`${nickname}님의 얼굴 그림은 ${s.name}의 윤곽을 중심으로 구성했습니다. ${s.visual}\n\n${s.story}\n\n눈썹·눈·입술의 모양은 아래 세부해설과 그림에서 함께 확인할 수 있습니다. 이 종합감정은 전통 관상을 소재로 한 창작 도상 감상입니다. 얼굴로 실제 성격·능력·건강·재물·운명을 판단하지 않으며, 자동 측정은 사용자가 수정할 수 있습니다.`,500);
-  const details=[{key:'shape',title:'얼굴형',text:bounded(`${s.visual}\n\n그림의 주제는 ‘${s.motif}’입니다. ${s.story}`,200)},{key:'brow',title:'눈썹',text:bounded((brow[selection.brow]||brow.arch).replace('. 그림에서는','.\n\n그림에서는'),200)},{key:'eye',title:'눈 윤곽',text:bounded((eye[selection.eye]||eye.soft).replace('. 그림에서는','.\n\n그림에서는'),200)},{key:'lip',title:'입술',text:bounded((lip[selection.lip]||lip.full).replace('. 그림에서는','.\n\n그림에서는'),200)}];
+  const overall=bounded(`${nickname}님의 입력 사진에서 선택·확인한 형태는 ${s.name}입니다. ${s.visual}\n\n사진의 붉은 선은 자동으로 찾은 얼굴 윤곽·눈썹·눈·입술의 위치를 표시합니다. 검출이 어려운 사진에는 선이 표시되지 않으며, 형태 선택은 직접 수정할 수 있습니다.\n\n아래에서는 사진의 부분별 관찰과 창작 운세를 나누어 설명합니다. 얼굴의 생김새로 성격·능력·건강·재물·미래를 판단하지 않습니다.`,500);
+  const details=[{key:'shape',title:'얼굴 윤곽',text:bounded(`${s.visual}\n\n사진에서 얼굴 바깥을 따라 그린 붉은 선과 비교해 보세요. 각도와 머리카락 가림에 따라 측정이 달라질 수 있습니다.`,200)},{key:'brow',title:'눈썹',text:bounded(`${features.brow.items[selection.brow]}으로 선택했습니다.\n\n사진의 눈 위쪽 붉은 선이 관찰 위치입니다. 눈썹을 가리는 머리카락이나 표정에 따라 모양이 다르게 보일 수 있습니다.`,200)},{key:'eye',title:'눈 윤곽',text:bounded(`${features.eye.items[selection.eye]}으로 선택했습니다.\n\n사진의 눈 둘레 붉은 선을 참고하세요. 눈을 뜨는 정도와 촬영 각도에 영향을 받으며 성격이나 능력을 나타내지 않습니다.`,200)},{key:'lip',title:'입술',text:bounded(`${features.lip.items[selection.lip]} 형태로 선택했습니다.\n\n사진에서 입술을 감싼 붉은 선이 관찰 위치입니다. 말하거나 웃는 표정에 따라 윤곽이 달라질 수 있습니다.`,200)}];
   return {overall,details};
 }
-export function resultText(profile,selection,source){
+export function resultText(profile,selection,source,fortune=buildFortune(profile)){
   const s=shapes[selection.shape],appraisal=buildAppraisal(profile,selection);
-  return `명도재 이명우의 관상앱 — 문화 체험 감정서\n${profile.nickname||'체험자'}님의 관상 이야기\n\n입력 방식: ${source}\n얼굴형: ${s.name}\n눈썹: ${features.brow.items[selection.brow]}\n눈: ${features.eye.items[selection.eye]}\n입술: ${features.lip.items[selection.lip]}\n\n종합감정 (${countChars(appraisal.overall)}/500자)\n${appraisal.overall}\n\n세부해설\n${appraisal.details.map(d=>`${d.title} (${countChars(d.text)}/200자)\n${d.text}`).join('\n\n')}\n\n이 결과는 전통 관상을 소재로 한 문화·오락 콘텐츠입니다. 얼굴로 개인의 성격·능력·건강·재물·운명을 판단할 수 없습니다. 분류 기준은 앱의 실험적 휴리스틱이며 과학적 관상 판정이 아닙니다.\n사진, 나이, 성별은 이 파일에 포함하지 않았습니다. 별명은 포함되므로 공유 전 확인하세요.`;
+  return `명도재 이명우의 관상앱 — 사진 관찰·운세 감정서\n${profile.nickname||'체험자'}님의 관상 이야기\n\n입력 방식: ${source}\n얼굴형: ${s.name}\n눈썹: ${features.brow.items[selection.brow]}\n눈: ${features.eye.items[selection.eye]}\n입술: ${features.lip.items[selection.lip]}\n\n종합감정 (${countChars(appraisal.overall)}/500자)\n${appraisal.overall}\n\n사진 부분별 해설\n${appraisal.details.map(d=>`${d.title} (${countChars(d.text)}/200자)\n${d.text}`).join('\n\n')}\n\n${fortuneText(fortune)}\n\n이 결과는 문화·오락 콘텐츠입니다. 실제 의사결정의 근거로 사용하지 마세요.\n사진, 나이, 성별 및 연령별 생활 제안은 이 TXT 파일에 포함하지 않았습니다. 별명은 포함되므로 공유 전 확인하세요.`;
 }
