@@ -1,0 +1,30 @@
+import vm from 'node:vm';
+import fs from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const source=await fs.readFile(new URL('../../public/face-story/app.mjs',import.meta.url),'utf8');
+const core=await fs.readFile(new URL('../../public/face-story/face-core.mjs',import.meta.url),'utf8');
+const nodes=new Map();
+function node(id){if(!nodes.has(id))nodes.set(id,{id,dataset:{},value:'',hidden:true,disabled:false,checked:false,naturalWidth:800,naturalHeight:1000,videoWidth:800,videoHeight:1000,innerHTML:'',textContent:'',handlers:{},classList:{toggle(){}},addEventListener(type,fn){this.handlers[type]=fn;},removeAttribute(key){delete this[key];},setAttribute(key,v){this[key]=v;},replaceChildren(){this.innerHTML='';this.textContent='';},getContext(){return{drawImage(){}};},focus(){},scrollIntoView(){},async decode(){},async play(){},setCustomValidity(){},reportValidity(){return true;},setCustomValidity(){},reset(){for(const id of ['nickname','age','gender'])node(id).value='';node('consent').checked=false;},click(){return this.handlers.click?.();}});return nodes.get(id);}
+const canvasCallbacks=[];let delayedCanvas=false;
+const document={hidden:false,querySelector:s=>node(s.slice(1)),querySelectorAll:()=>[],addEventListener(){},createElement(tag){if(tag==='canvas')return{width:0,height:0,getContext(){return{drawImage(){}};},toBlob(cb){if(delayedCanvas)canvasCallbacks.push(cb);else cb(new Blob(['image'],{type:'image/jpeg'}));}};return node('created-'+tag);}};
+const modelCreates=[];const streams=[];
+const makeStream=()=>{const track={stopped:false,stop(){this.stopped=true;}};const s={track,getTracks:()=>[track]};streams.push(s);return s;};
+const context=vm.createContext({document,window:{isSecureContext:true,scrollTo(){},addEventListener(){}},navigator:{mediaDevices:{async getUserMedia(){return makeStream();}}},console,Blob,File,URL:{createObjectURL:()=>`blob:qa-${Math.random()}`,revokeObjectURL(){}},setTimeout:()=>1,clearTimeout(){},requestAnimationFrame:cb=>cb(),createImageBitmap:async()=>({width:800,height:1000,close(){}})});
+const vision=new vm.SyntheticModule(['FaceLandmarker','FilesetResolver'],function(){this.setExport('FaceLandmarker',{createFromOptions(){return new Promise(resolve=>modelCreates.push(resolve));}});this.setExport('FilesetResolver',{forVisionTasks:async()=>({})});},{context});
+const fortuneModule=new vm.SourceTextModule(await fs.readFile(new URL('../../public/face-story/fortune.mjs',import.meta.url),'utf8'),{context});await fortuneModule.link(()=>{});
+const annotationModule=new vm.SourceTextModule(await fs.readFile(new URL('../../public/face-story/photo-annotations.mjs',import.meta.url),'utf8'),{context});await annotationModule.link(()=>{});
+const coreModule=new vm.SourceTextModule(core,{context});await coreModule.link(specifier=>specifier.includes('fortune')?fortuneModule:annotationModule);await coreModule.evaluate();
+const app=new vm.SourceTextModule(source,{context,importModuleDynamically:async()=>{if(vision.status==='unlinked')await vision.link(()=>{});if(vision.status!=='evaluated')await vision.evaluate();return vision;}});await app.link(()=>coreModule);await app.evaluate();
+const tick=()=>new Promise(resolve=>setImmediate(resolve));
+const image=new File(['image'],'test.png',{type:'image/png'});
+await node('file').handlers.change({target:{files:[image]}});await tick();await tick();node('consent').checked=true;
+const first=node('profile-form').handlers.submit({preventDefault(){}});await tick();assert.equal(modelCreates.length,1);
+node('demo').handlers.click();const second=node('profile-form').handlers.submit({preventDefault(){}});await tick();assert.equal(modelCreates.length,1,'공유 모델을 중복 생성하면 안 됨');
+const instance={closed:false,detect(){assert.equal(this.closed,false,'취소한 요청이 공유 모델을 닫으면 안 됨');return{faceLandmarks:[]};},close(){this.closed=true;}};modelCreates.shift()(instance);await first;await second;assert.equal(node('adjust').hidden,false);assert.equal(instance.closed,false);
+node('nickname').value='지울별명';node('make-result').handlers.click();assert.match(node('result-heading').textContent,/지울별명/);node('delete-all').handlers.click();assert.equal(node('result-heading').textContent,'');assert.equal(node('annotated-photo').width,0);assert.equal(instance.closed,true);assert.equal(node('photo').src,undefined);assert.equal(node('nickname').value,'');
+await node('camera').handlers.click();delayedCanvas=true;const oldCapture=node('capture').handlers.click();await node('camera').handlers.click();const latestStream=streams.at(-1);canvasCallbacks.shift()(new Blob(['image'],{type:'image/jpeg'}));await oldCapture;assert.equal(latestStream.track.stopped,false,'이전 촬영이 새 카메라를 끄면 안 됨');node('cancel-camera').handlers.click();assert.equal(latestStream.track.stopped,true);
+console.log('PASS: 공유 모델 취소 경합 / 전체삭제 DOM·사진·입력·모델 해제 / 이전 촬영의 새 카메라 종료 방지 / 카메라 취소 트랙 종료');
+delayedCanvas=false;await node('file').handlers.change({target:{files:[image]}});await tick();await tick();node('consent').checked=true;const pendingAnalyze=node('profile-form').handlers.submit({preventDefault(){}});await tick();assert.equal(modelCreates.length,1);node('delete-all').handlers.click();const late={closed:false,close(){this.closed=true;},detect(){throw Error('삭제 후 측정하면 안 됨');}};modelCreates.shift()(late);await pendingAnalyze;assert.equal(late.closed,true);assert.equal(node('adjust').hidden,true);assert.equal(node('result').hidden,true);
+const pendingCamera=node('camera').handlers.click();node('delete-all').handlers.click();await pendingCamera;assert.equal(streams.at(-1).track.stopped,true);
+console.log('PASS: 모델 로딩 중 삭제 후 늦은 모델 해제 / 카메라 권한 대기 중 삭제 후 늦은 트랙 종료');
+
